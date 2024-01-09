@@ -1,0 +1,581 @@
+---
+- name: ACI Tenant Creation
+  hosts: apic
+  connection: local
+  gather_facts: no
+
+  tasks:
+  - name: Add a new VLAN pool
+    cisco.aci.aci_vlan_pool:
+      host: <ADD_IP_ADDRESS_HERE>
+      username: admin
+      certificate_name: acihot_ansible
+      private_key: "{{ lookup('file', 'admin_ansible.key') }}"
+      output_level: debug
+      validate_certs: no
+      pool: Ansible_VLAN
+      pool_allocation_mode: static
+      state: present
+    delegate_to: localhost
+    register: query_result
+  
+  - name: Add a new VLAN encap block
+    cisco.aci.aci_vlan_pool_encap_block:
+      host: <ADD_IP_ADDRESS_HERE>
+      username: admin
+      certificate_name: acihot_ansible
+      private_key: "{{ lookup('file', 'admin_ansible.key') }}"
+      state: present
+      output_level: debug
+      validate_certs: no
+      pool: Ansible_VLAN
+      block_start: 900
+      block_end: 999
+      pool_allocation_mode: static
+    delegate_to: localhost
+    register: query_result 
+
+  - name: Add a new physical domain
+    cisco.aci.aci_domain:
+      domain: Ansible_dom
+      domain_type: phys
+      host: <ADD_IP_ADDRESS_HERE>
+      username: admin
+      certificate_name: acihot_ansible
+      private_key: "{{ lookup('file', 'admin_ansible.key') }}"
+      state: present
+      output_level: debug
+      validate_certs: no
+    delegate_to: localhost
+    register: query_result   
+        
+
+  - name: Bind a physical domain to VLAN pool
+    cisco.aci.aci_domain_to_vlan_pool:
+      domain: Ansible_dom
+      domain_type: phys
+      pool: Ansible_VLAN
+      pool_allocation_mode: static
+      host: <ADD_IP_ADDRESS_HERE>
+      username: admin
+      certificate_name: acihot_ansible
+      private_key: "{{ lookup('file', 'admin_ansible.key') }}"
+      state: present
+      output_level: debug
+      validate_certs: no
+    delegate_to: localhost
+    register: query_result 
+
+  - name: Add a new AEP
+    cisco.aci.aci_aep:
+      aep: Ansible_AEP
+      description: default
+      infra_vlan: true
+      host: <ADD_IP_ADDRESS_HERE>
+      username: admin
+      certificate_name: acihot_ansible
+      private_key: "{{ lookup('file', 'admin_ansible.key') }}"
+      state: present
+      output_level: debug
+      validate_certs: no
+    delegate_to: localhost
+    register: query_result 
+
+  - name: Add AEP to domain binding
+    cisco.aci.aci_aep_to_domain: &binding_present
+      aep: Ansible_AEP
+      domain: Ansible_dom
+      domain_type: phys
+      host: <ADD_IP_ADDRESS_HERE>
+      username: admin
+      certificate_name: acihot_ansible
+      private_key: "{{ lookup('file', 'admin_ansible.key') }}"
+      state: present
+      output_level: debug
+      validate_certs: no
+    delegate_to: localhost
+    register: query_result 
+
+  - name: Create a Leaf Access Port Policy Group
+    cisco.aci.aci_interface_policy_leaf_policy_group:
+      lag_type: leaf
+      policy_group: Ansible_POL1
+      aep: Ansible_AEP
+      host: <ADD_IP_ADDRESS_HERE>
+      username: admin
+      certificate_name: acihot_ansible
+      private_key: "{{ lookup('file', 'admin_ansible.key') }}"
+      state: present
+      output_level: debug
+      validate_certs: no
+    delegate_to: localhost
+    register: query_result
+
+  - name: Create a Leaf Access Port Policy Group
+    cisco.aci.aci_interface_policy_leaf_policy_group:
+      lag_type: leaf
+      policy_group: Ansible_POL2
+      aep: Ansible_AEP
+      host: <ADD_IP_ADDRESS_HERE>
+      username: admin
+      certificate_name: acihot_ansible
+      private_key: "{{ lookup('file', 'admin_ansible.key') }}"
+      state: present
+      output_level: debug
+      validate_certs: no
+    delegate_to: localhost
+    register: query_result
+
+  - name: Add a new leaf_interface_profile
+    cisco.aci.aci_interface_policy_leaf_profile:
+      interface_profile: Ansible_leafintprfname1
+      host: <ADD_IP_ADDRESS_HERE>
+      username: admin
+      certificate_name: acihot_ansible
+      private_key: "{{ lookup('file', 'admin_ansible.key') }}"
+      state: present
+      output_level: debug
+      validate_certs: no
+    delegate_to: localhost
+    register: query_result
+
+  - name: Add a new leaf_interface_profile
+    cisco.aci.aci_interface_policy_leaf_profile:
+      interface_profile: Ansible_leafintprfname2
+      host: <ADD_IP_ADDRESS_HERE>
+      username: admin
+      certificate_name: acihot_ansible
+      private_key: "{{ lookup('file', 'admin_ansible.key') }}"
+      state: present
+      output_level: debug
+      validate_certs: no
+    delegate_to: localhost
+    register: query_result
+
+  - name: Associate an Interface Access Port Selector to an Interface Policy Leaf Profile with a Policy Group
+    cisco.aci.aci_access_port_to_interface_policy_leaf_profile:
+      interface_profile: Ansible_leafintprfname1
+      access_port_selector: Ansible_accessportselectorname1
+      port_blk: Ansible_leafportblkname1
+      from_port: 10
+      to_port: 10
+      policy_group: Ansible_POL1
+      host: <ADD_IP_ADDRESS_HERE>
+      username: admin
+      certificate_name: acihot_ansible
+      private_key: "{{ lookup('file', 'admin_ansible.key') }}"
+      state: present
+      output_level: debug
+      validate_certs: no
+    delegate_to: localhost
+    register: query_result
+      
+  - name: Associate an Interface Access Port Selector to an Interface Policy Leaf Profile with a Policy Group
+    cisco.aci.aci_access_port_to_interface_policy_leaf_profile:
+      interface_profile: Ansible_leafintprfname2
+      access_port_selector: Ansible_accessportselectorname2
+      port_blk: Ansible_leafportblkname2
+      from_port: 5
+      to_port: 5
+      policy_group: Ansible_POL2
+      host: <ADD_IP_ADDRESS_HERE>
+      username: admin
+      certificate_name: acihot_ansible
+      private_key: "{{ lookup('file', 'admin_ansible.key') }}"
+      state: present
+      output_level: debug
+      validate_certs: no
+    delegate_to: localhost
+    register: query_result
+
+  - name: creating a Leaf Profile with description
+    cisco.aci.aci_switch_policy_leaf_profile:
+      leaf_profile: Ansible_Leaf_2001
+      host: <ADD_IP_ADDRESS_HERE>
+      username: admin
+      certificate_name: acihot_ansible
+      private_key: "{{ lookup('file', 'admin_ansible.key') }}"
+      state: present
+      output_level: debug
+      validate_certs: no
+    delegate_to: localhost
+    register: query_result
+
+  - name: creating a Leaf Profile with description
+    cisco.aci.aci_switch_policy_leaf_profile:
+      leaf_profile: Ansible_Leaf_103
+      host: <ADD_IP_ADDRESS_HERE>
+      username: admin
+      certificate_name: acihot_ansible
+      private_key: "{{ lookup('file', 'admin_ansible.key') }}"
+      state: present
+      output_level: debug
+      validate_certs: no
+    delegate_to: localhost
+    register: query_result
+
+  - name: adding a switch policy leaf profile selector associated Node Block range (w/ policy group)
+    cisco.aci.aci_switch_leaf_selector:
+      leaf_profile: Ansible_Leaf_2001
+      leaf: Ansible_Leaf_2001_selector
+      leaf_node_blk: Ansible_Leaf_2001_blk
+      from: 2001
+      to: 2001
+      host: <ADD_IP_ADDRESS_HERE>
+      username: admin
+      certificate_name: acihot_ansible
+      private_key: "{{ lookup('file', 'admin_ansible.key') }}"
+      state: present
+      output_level: debug
+      validate_certs: no
+    delegate_to: localhost
+    register: query_result
+      
+  - name: adding a switch policy leaf profile selector associated Node Block range (w/ policy group)
+    cisco.aci.aci_switch_leaf_selector:
+      leaf_profile: Ansible_Leaf_103
+      leaf: Ansible_Leaf_103_selector
+      leaf_node_blk: Ansible_Leaf_103_blk
+      from: 103
+      to: 103
+      host: <ADD_IP_ADDRESS_HERE>
+      username: admin
+      certificate_name: acihot_ansible
+      private_key: "{{ lookup('file', 'admin_ansible.key') }}"
+      state: present
+      output_level: debug
+      validate_certs: no
+    delegate_to: localhost
+    register: query_result
+
+
+  - name: Associating an interface selector profile to a switch policy leaf profile
+    cisco.aci.aci_interface_selector_to_switch_policy_leaf_profile:
+      leaf_profile: Ansible_Leaf_2001
+      interface_selector: Ansible_leafintprfname1
+      host: <ADD_IP_ADDRESS_HERE>
+      username: admin
+      certificate_name: acihot_ansible
+      private_key: "{{ lookup('file', 'admin_ansible.key') }}"
+      state: present
+      output_level: debug
+      validate_certs: no
+    delegate_to: localhost
+    register: query_result
+
+  - name: Associating an interface selector profile to a switch policy leaf profile
+    cisco.aci.aci_interface_selector_to_switch_policy_leaf_profile:
+      leaf_profile: Ansible_Leaf_103
+      interface_selector: Ansible_leafintprfname2
+      host: <ADD_IP_ADDRESS_HERE>
+      username: admin
+      certificate_name: acihot_ansible
+      private_key: "{{ lookup('file', 'admin_ansible.key') }}"
+      state: present
+      output_level: debug
+      validate_certs: no
+    delegate_to: localhost
+    register: query_result
+
+  - name: CREATE ACI TENANT
+    cisco.aci.aci_tenant:
+      host: <ADD_IP_ADDRESS_HERE>
+      username: admin
+      certificate_name: acihot_ansible
+      private_key: "{{ lookup('file', 'admin_ansible.key') }}"
+      state: present
+      output_level: debug
+      validate_certs: no
+      tenant: Ansible_test
+    delegate_to: localhost
+    register: query_result
+  
+
+  - name: CREATE ACI TENANT VRF
+    cisco.aci.aci_vrf:
+      vrf: Ansible_VRF
+      tenant: Ansible_test
+      host: <ADD_IP_ADDRESS_HERE>
+      username: admin
+      certificate_name: acihot_ansible
+      private_key: "{{ lookup('file', 'admin_ansible.key') }}"
+      state: present
+      output_level: debug
+      validate_certs: no
+    delegate_to: localhost
+    register: query_result
+
+
+  - name: CREATE ACI TENANT BD
+    cisco.aci.aci_bd:
+      tenant: Ansible_test
+      bd: Ansible_BD
+      vrf: Ansible_VRF
+      host: <ADD_IP_ADDRESS_HERE>
+      username: admin
+      certificate_name: acihot_ansible
+      private_key: "{{ lookup('file', 'admin_ansible.key') }}"
+      state: present
+      output_level: debug
+      validate_certs: no
+    delegate_to: localhost
+    register: query_result
+
+  - name: CREATE ACI TENANT BD SUBNET
+    cisco.aci.aci_bd_subnet:
+      tenant: Ansible_test
+      bd: Ansible_BD
+      gateway: 33.33.33.254
+      mask: 24
+      host: <ADD_IP_ADDRESS_HERE>
+      username: admin
+      certificate_name: acihot_ansible
+      private_key: "{{ lookup('file', 'admin_ansible.key') }}"
+      state: present
+      output_level: debug
+      validate_certs: no
+    delegate_to: localhost
+    register: query_result
+
+  - name: CREATE ACI TENANT BD
+    cisco.aci.aci_bd:
+      tenant: Ansible_test
+      bd: Ansible_BD2
+      vrf: Ansible_VRF
+      host: <ADD_IP_ADDRESS_HERE>
+      username: admin
+      certificate_name: acihot_ansible
+      private_key: "{{ lookup('file', 'admin_ansible.key') }}"
+      state: present
+      output_level: debug
+      validate_certs: no
+    delegate_to: localhost
+    register: query_result
+
+  - name: CREATE ACI TENANT BD SUBNET
+    cisco.aci.aci_bd_subnet:
+      tenant: Ansible_test
+      bd: Ansible_BD2
+      gateway: 66.66.66.254
+      mask: 24
+      host: <ADD_IP_ADDRESS_HERE>
+      username: admin
+      certificate_name: acihot_ansible
+      private_key: "{{ lookup('file', 'admin_ansible.key') }}"
+      state: present
+      output_level: debug
+      validate_certs: no
+    delegate_to: localhost
+    register: query_result
+
+
+  - name: CREATE ACI TENANT APP PROFILE
+    cisco.aci.aci_ap:
+      ap: Ansible_AP
+      tenant: Ansible_test
+      host: <ADD_IP_ADDRESS_HERE>
+      username: admin
+      certificate_name: acihot_ansible
+      private_key: "{{ lookup('file', 'admin_ansible.key') }}"
+      state: present
+      output_level: debug
+      validate_certs: no
+    delegate_to: localhost
+    register: query_result
+
+  - name: CREATE ACI TENANT APP PROFILE EPG
+    cisco.aci.aci_epg:
+      epg: Ansible_EPG
+      ap: Ansible_AP
+      tenant: Ansible_test
+      bd: Ansible_BD
+      host: <ADD_IP_ADDRESS_HERE>
+      username: admin
+      certificate_name: acihot_ansible
+      private_key: "{{ lookup('file', 'admin_ansible.key') }}"
+      state: present
+      output_level: debug
+      validate_certs: no
+    delegate_to: localhost
+    register: query_result
+
+  - name: CREATE ACI TENANT APP PROFILE EPG
+    cisco.aci.aci_epg:
+      epg: Ansible_EPG2
+      ap: Ansible_AP
+      tenant: Ansible_test
+      bd: Ansible_BD2
+      host: <ADD_IP_ADDRESS_HERE>
+      username: admin
+      certificate_name: acihot_ansible
+      private_key: "{{ lookup('file', 'admin_ansible.key') }}"
+      state: present
+      output_level: debug
+      validate_certs: no
+    delegate_to: localhost
+    register: query_result
+
+  - name: Deploy Static Path binding for given EPG
+    cisco.aci.aci_static_binding_to_epg:
+      tenant: Ansible_test
+      ap: Ansible_AP
+      epg: Ansible_EPG
+      encap_id: 950
+      deploy_immediacy: immediate
+      interface_mode: trunk
+      interface_type: switch_port
+      pod_id: 1
+      leafs: 2001
+      interface: '1/10'
+      host: <ADD_IP_ADDRESS_HERE>
+      username: admin
+      certificate_name: acihot_ansible
+      private_key: "{{ lookup('file', 'admin_ansible.key') }}"
+      state: present
+      output_level: debug
+      validate_certs: no
+    delegate_to: localhost
+    register: query_result
+
+  - name: Deploy Static Path binding for given EPG
+    cisco.aci.aci_static_binding_to_epg:
+      tenant: Ansible_test
+      ap: Ansible_AP
+      epg: Ansible_EPG2
+      encap_id: 970
+      deploy_immediacy: immediate
+      interface_mode: trunk
+      interface_type: switch_port
+      pod_id: 1
+      leafs: 103
+      interface: '1/5'
+      host: <ADD_IP_ADDRESS_HERE>
+      username: admin
+      certificate_name: acihot_ansible
+      private_key: "{{ lookup('file', 'admin_ansible.key') }}"
+      state: present
+      output_level: debug
+      validate_certs: no
+    delegate_to: localhost
+    register: query_result
+
+  - name: Add a new filter to a tenant
+    cisco.aci.aci_filter:
+      filter: ALLOW_ALL_TCP_FILTER
+      tenant: Ansible_test
+      host: <ADD_IP_ADDRESS_HERE>
+      username: admin
+      certificate_name: acihot_ansible
+      private_key: "{{ lookup('file', 'admin_ansible.key') }}"
+      state: present
+      output_level: debug
+      validate_certs: no
+    delegate_to: localhost
+    register: query_result
+
+  - name: Create Filter
+    cisco.aci.aci_filter_entry:
+      entry: ALLOW_ALL_TCP
+      tenant: Ansible_test
+      ether_type: ip
+      ip_protocol: tcp
+      dst_port_start: 1
+      dst_port_end: 65535
+      filter: ALLOW_ALL_TCP_FILTER
+      host: <ADD_IP_ADDRESS_HERE>
+      username: admin
+      certificate_name: acihot_ansible
+      private_key: "{{ lookup('file', 'admin_ansible.key') }}"
+      state: present
+      output_level: debug
+      validate_certs: no
+    delegate_to: localhost
+    register: query_result
+
+  - name: Add a new contract
+    cisco.aci.aci_contract:
+      tenant: Ansible_test
+      contract: ALLOW_ALL_TCP_CONTRACT
+      scope: context
+      host: <ADD_IP_ADDRESS_HERE>
+      username: admin
+      certificate_name: acihot_ansible
+      private_key: "{{ lookup('file', 'admin_ansible.key') }}"
+      state: present
+      output_level: debug
+      validate_certs: no
+    delegate_to: localhost
+    register: query_result
+
+  - name: Add a new contract subject
+    cisco.aci.aci_contract_subject:
+      tenant: Ansible_test
+      contract: ALLOW_ALL_TCP_CONTRACT
+      subject: ALLOW_ALL_TCP_SUBJECT 
+      reverse_filter: yes
+      priority: level1
+      dscp: unspecified
+      host: <ADD_IP_ADDRESS_HERE>
+      username: admin
+      certificate_name: acihot_ansible
+      private_key: "{{ lookup('file', 'admin_ansible.key') }}"
+      state: present
+      output_level: debug
+      validate_certs: no
+    delegate_to: localhost
+    register: query_result
+
+  - name: Add a new contract subject to filer binding
+    cisco.aci.aci_contract_subject_to_filter:
+      tenant: Ansible_test
+      contract: ALLOW_ALL_TCP_CONTRACT
+      subject: ALLOW_ALL_TCP_SUBJECT
+      filter: ALLOW_ALL_TCP_FILTER 
+      host: <ADD_IP_ADDRESS_HERE>
+      username: admin
+      certificate_name: acihot_ansible
+      private_key: "{{ lookup('file', 'admin_ansible.key') }}"
+      state: present
+      output_level: debug
+      validate_certs: no
+    delegate_to: localhost
+    register: query_result
+
+  - name: Add a new contract to EPG binding
+    cisco.aci.aci_epg_to_contract:
+      tenant: Ansible_test
+      ap: Ansible_AP
+      epg: Ansible_EPG
+      contract: ALLOW_ALL_TCP_CONTRACT
+      contract_type: provider
+      host: <ADD_IP_ADDRESS_HERE>
+      username: admin
+      certificate_name: acihot_ansible
+      private_key: "{{ lookup('file', 'admin_ansible.key') }}"
+      state: present
+      output_level: debug
+      validate_certs: no
+    delegate_to: localhost
+    register: query_result
+
+  - name: Add a new contract to EPG binding
+    cisco.aci.aci_epg_to_contract:
+      tenant: Ansible_test
+      ap: Ansible_AP
+      epg: Ansible_EPG2
+      contract: ALLOW_ALL_TCP_CONTRACT
+      contract_type: consumer
+      host: <ADD_IP_ADDRESS_HERE>
+      username: admin
+      certificate_name: acihot_ansible
+      private_key: "{{ lookup('file', 'admin_ansible.key') }}"
+      state: present
+      output_level: debug
+      validate_certs: no
+    delegate_to: localhost
+    register: query_result
+
+
+  - name: debug
+    debug:
+      var: query_result

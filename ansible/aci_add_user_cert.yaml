@@ -1,0 +1,24 @@
+---
+- name: ACI Sample - aci_aaa_user_certificate
+  hosts: apic
+  connection: local
+  gather_facts: no
+
+  tasks:
+  - name: Add Certificate to APIC admin
+    cisco.aci.aci_aaa_user_certificate:
+      host: <ADD_IP_ADDRESS_HERE>
+      username: admin
+      password: <PASSWORD>
+
+      aaa_user: admin
+      name: acihot_ansible
+      certificate: "{{ lookup('file', 'admin_ansible.crt') }}"
+
+      validate_certs: no
+    delegate_to: localhost
+    register: query_result
+
+  - name: debug
+    debug:
+      var: query_result
